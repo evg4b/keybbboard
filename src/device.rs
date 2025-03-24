@@ -1,8 +1,11 @@
+mod protocol;
+
 use std::net::TcpStream;
-use std::io::Write;
+use std::io::{stdin, Read, Write};
 use std::env;
 use crossterm::event::{self, Event, KeyEventKind, KeyCode};
 use crossterm::terminal;
+use crate::protocol::ServerResponse;
 
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -16,6 +19,24 @@ fn main() -> std::io::Result<()> {
     println!("Подключен к серверу {}. Нажимайте клавиши... (ESC для выхода)", server_addr);
 
     terminal::enable_raw_mode().expect("Не удалось включить raw mode");
+
+    let mut buffer: Vec<u8> = vec![0u8; 64 * 1024]; // 64 KB buffer initialized with 0s
+
+    let response = stream.read(&mut buffer);
+    match response {
+        Err(e) => {
+            eprintln!("Failed to receive data: {}", e);
+        }
+        Ok(n) => {
+            let item: ServerResponse = bitcode::decode(&mut buffer).unwrap();
+            match item {
+                ServerResponse::ConnectionError(msg) => {
+                    panic!("Connection error: {}", msg);
+                }
+                _ => {}
+            }
+        },
+    }
 
     loop {
         if let Event::Key(key_event) = event::read()? {
@@ -31,8 +52,9 @@ fn main() -> std::io::Result<()> {
                     }
                     _ => continue,
                 };
+                let bytes = key_str.as_bytes();
 
-                stream.write_all(key_str.as_bytes())?;
+                stream.write_all(bytes)?;
                 stream.flush()?;
             }
         }

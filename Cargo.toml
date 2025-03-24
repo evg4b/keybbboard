@@ -12,4 +12,14 @@ name = "keybbboard-device"
 path = "src/device.rs"
 
 [dependencies]
+binmarshal = "1.1.7"
 crossterm = "0.28.1"
+terminal-keycode = "1.1.1"
+raw_tty="0.1.0"
+nimble = { version = "0.2", features = ["derive"] }
+serde = "1.0.219"
+bitcode = "=0.6.5"
+bincode = "2.0.1"
+
+[target.aarch64-unknown-linux-gnu.dependencies]
+uinput = "0.1.3"
